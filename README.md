@@ -1,4 +1,4 @@
-# ACIT 2420 - Assignment 3 Part 2: Working with Load Balancing multiple droplets
+# ACIT 2420 - Assignment 3 Part 2: Working with a Load Balancer and Multiple Droplets
 
 ## Introduction
 This README continues the assignment's part 1 in setting up a bash script that generates a static index.html file containing system information and configuring an NGINX web server. This README will will guide you on the instructions on how to set up 2 DigitalOcean droplets and a load balancer to distribute the traffic between the two droplets. The final outcome should allow you to displays files from a documents directory on the server by inputting the `<load balancer's IP address>/documents` into the URL of a web browser.
