@@ -258,19 +258,27 @@ server {
 
 `try_files $uri $uri/ =404` will check if the requested file is found and hosts it, if not, it will return a 404 error.[6]
 
+`alias` specifies the path which to display the directory contents from.[7]
+
+`autoindex on` enables the directory listing.[8]
+
+`autoindex_exact_size off` makes it so the file sizes are shown in human-readable sizes instead of bytes.[8]
+
+`autoindex_localtime on` displays the timestamps in the local timezone.[8]
+
 By completing steps 4 and 5 and separating the server files from the config file, it allows us to have some modularity in the code and be able to turn off and on each server that we want by creating symlinks between sites-enabled and sites-available.
 
 6. Enable Server Block
 
-Now that we have created the server block, we will enable it by creating a symlink from the server block file to the `/etc/nginx/sites-enabled` directory. We will then add the sites-enabled files to the `nginx.conf` file to enable it. 
+Now that we have created the server block, we will enable it by creating a symlink from the server block file to the `/etc/nginx/sites-enabled` directory.  
 
 Enter the command: `sudo ln -s /etc/nginx/sites-available/webgen /etc/nginx/sites-enabled/`
 
-7. Restart your nginx service
+7. Restart your NGINX service
 
-After all the changes, we must restart our Nginx service. Enter the command:
+After all the changes, we must reload our NGINX service. Enter the command:
 
-`sudo systemctl restart nginx`
+`sudo systemctl reload nginx`
 
 Check that Nginx service is working as intended by entering:
 
@@ -294,7 +302,7 @@ Enter the commands: `sudo ufw allow SSH` and `sudo ufw allow http`
 
 Enter the command: `sudo ufw limit SSH`
 
-By limiting the SSH rate, the UFW will deny connections from an IP address that has attempted to initiate 6 or more connections in the last 30 seconds.[7]
+By limiting the SSH rate, the UFW will deny connections from an IP address that has attempted to initiate 6 or more connections in the last 30 seconds.[9]
 
 4. Enable the UFW
 
@@ -321,17 +329,32 @@ If it says Status: active, then congratulations! Your firewall is now operationa
 
 ## Step 6: Verifying the Configuration
 
-To Verify the website is working, we need to get the IP address from our droplet on Digital Ocean.
+To Verify the droplets and load balancer is working, we need to get the IP address for our load balancer on Digital Ocean and also check the health of our load balancer.
 
-1. On DigitalOcean, open the droplets menu from the left and copy the IPv4 Address
+1. On DigitalOcean, check to see that the load balancer's status is healthy.
 
-![dropletimage](droplets_ip_image.png)
+![loadbalancer](images/loadbalancer.png)
 
-2. In your browser, enter the IP address in your URL bar and enter it. If successful, the output should look like this:
+2. Copy the IP address and past it into your URL to ensure the index.html page is working correctly: `http://<your-ip-address>`
 
-![successimage](success_image.png)
+It should look like this:
 
-Congratulations!, you have successfully configured your Nginx web server to host a static HTML that updates every day at 5:00 AM UTC, and you also successfully secured your server using UFW!.
+![indexpage](images/indexpage.png)
+
+Try refreshing the page to see if the `Public IP address of server` changes to the other server:
+
+![otherindexpage](images/otherindexpage.png)
+
+3. Verify that the documents directory is being displayed by entering the URL earlier followed by `/documents`.
+
+Enter this into the URL bar: `http://<your-ip-address>/documents`
+
+It should look like this if done correctly:
+
+![documents](images/documents.png)
+
+
+Congratulations!, you have successfully configured your load balancer to host two NGINX web servers to host a static HTML that updates every day at 5:00 AM UTC, and have a `/document` URL path that lets you see the document's directory contents, and you also successfully secured your servers using UFW!.
 
 # References
 
@@ -347,4 +370,8 @@ Congratulations!, you have successfully configured your Nginx web server to host
 
 [6] "Understanding Nginx Server and Location Block Selection Algorithms," *DigitalOcean Community Tutorials*. [Online]. Available: https://www.digitalocean.com/community/tutorials/understanding-nginx-server-and-location-block-selection-algorithms. [Accessed: Nov. 24, 2024].
 
-[7] ArchWiki, "Uncomplicated Firewall," *Arch Linux Wiki*. [Online]. Available: https://wiki.archlinux.org/title/Uncomplicated_Firewall. [Accessed: Nov. 24, 2024].
+[7] Nginx, "Module ngx_http_core_module - alias directive," [Online]. Available: https://nginx.org/en/docs/http/ngx_http_core_module.html#alias. [Accessed: Dec. 3, 2024].
+
+[8] Nginx, "Module ngx_http_autoindex_module," [Online]. Available: https://nginx.org/en/docs/http/ngx_http_autoindex_module.html. [Accessed: Dec. 3, 2024].
+
+[9] ArchWiki, "Uncomplicated Firewall," *Arch Linux Wiki*. [Online]. Available: https://wiki.archlinux.org/title/Uncomplicated_Firewall. [Accessed: Nov. 24, 2024].
