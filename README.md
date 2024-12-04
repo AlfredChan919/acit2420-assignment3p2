@@ -1,25 +1,50 @@
 # ACIT 2420 - Assignment 3 Part 2: Working with Load Balancing multiple droplets
 
 ## Introduction
-This README will instruct you on setting up a Bash script that generates a static index.html file containing system information. The script will be configured to run automatically every day at 5:00 AM UTC (Coordinated Universal Time). The HTML document created by this script will also be served with an nginx web server on your Arch Linux droplet along with a firewall setup using ufw to secure your server.
+This README continues the assignment's part 1 in setting up a bash script that generates a static index.html file containing system information and configuring an NGINX web server. This README will will guide you on the instructions on how to set up 2 DigitalOcean droplets and a load balancer to distribute the traffic between the two droplets. The final outcome should allow you to displays files from a documents directory on the server by inputting the `<load balancer's IP address>/documents` into the URL of a web browser.
+
+The completed configuration of our droplets will have a file tree that look like:
+```
+.
+├── bin/
+│    └── generate_index
+├── documents/
+│    ├── file-one
+│    └── file-two
+└── HTML/
+     └── index.html
+```
 
 ## Table of Contents
 
 1. [Introduction](#introduction)
-2. [Setting Up New System User and Files](#setting-up-new-system-user-and-files)
-3. [Step 1: Set Up System User](#step-1-set-up-system-user)
-4. [Step 2: Unit File Configuration](#step-2-unit-file-configuration)
-5. [Step 3: Nginx Configuration](#step-3-nginx-configuration)
-6. [Step 4: Setting Up UFW](#step-4-setting-up-ufw)
-7. [Step 5: Verifying the Configuration](#step-5-verifying-the-configuration)
+2. [Step 1: Creating new Droplets](#step-1-creating-new-droplets)
+2. [Step 2: Setting Up New System User and Files](#step-2-setting-up-new-system-user-and-files)
+3. [Step 3: Set Up System User](#step-3-set-up-system-user)
+4. [Step 4: Unit File Configuration](#step-4-unit-file-configuration)
+5. [Step 5: Nginx Configuration](#step-5-nginx-configuration)
+6. [Step 6: Setting Up UFW](#step-6-setting-up-ufw)
+7. [Step 7: Verifying the Configuration](#step-7-verifying-the-configuration)
 8. [References](#references)
 
-## Setting Up New System User and Files
+## Step 1: Creating new Droplets
+On DigitalOcean, begin by creating two new droplets.
+
+1. Press the green "Create" button at the top of the page and press "Create Droplet"
+2. For our case, select San Francisco Data center 3.
+![datacenter](images/datacenter.png)
+3. Keep VPC network as `Default`
+4. Select our Arch Linux custom image.
+5. At the bottom of the page, select 2 droplets and add the tag `web`.
+![tag](images/tag.png)
+6. Press `Create Droplet`
+
+## Step 2: Setting Up New System User and Files
 Before we begin, we need to create a system user called `webgen` with a home directory at `/var/lib/webgen` and a login shell for a non-user.
 
 The benefit of creating a system user rather than a regular user or root is so we can separate our files and other directories from our current user to prevent malicious attacks using something like the `chown` command. As for using system user instead of root, it prevents an attack from taking advantage of the elevated privileges within our system.[1][2]
 
-## Step 1: Set Up System User
+## Step 3: Set Up System User
 
 1. Enter the following command to create a system user with a custom home directory path with a non-login user shell:
 
@@ -62,7 +87,7 @@ Typically, the creation of a system user does not have a home directory, therefo
 
 -R: Recursive. It will iterate through all the files in the directory.[3]
 
-## Step 2: Unit File Configuration
+## Step 4: Unit File Configuration
 
 We will need a .service file in order to execute our script as well as a .timer file to execute it at 5:00 AM every day.[4]
 
@@ -114,7 +139,7 @@ To test our service is working, type
 
 If successful, we can check by entering: `systemctl status generate-index.service` and checking the logs.[4]
 
-## Step 3: Nginx Configuration
+## Step 5: Nginx Configuration
 
 1. Install Nginx
 
@@ -202,7 +227,7 @@ Check that Nginx service is working as intended by entering:
 
 **Note:** You may receive the error "Could not build optimal types_hash". Refer to section 6.4 of the https://wiki.archlinux.org/title/Nginx wiki page.[5]
 
-## Step 4: Setting Up UFW
+## Step 6: Setting Up UFW
 
 We will now set up the Uncomplicated Firewall (UFW) to help secure our server.
 
@@ -243,7 +268,7 @@ You will be presented with an output such as:
 
 If it says Status: active, then congratulations! Your firewall is now operational.
 
-## Step 5: Verifying the Configuration
+## Step 7: Verifying the Configuration
 
 To Verify the website is working, we need to get the IP address from our droplet on Digital Ocean.
 
