@@ -3,7 +3,7 @@
 ## Introduction
 This README continues the assignment's part 1 in setting up a bash script that generates a static index.html file containing system information and configuring an NGINX web server. This README will will guide you on the instructions on how to set up 2 DigitalOcean droplets and a load balancer to distribute the traffic between the two droplets. The final outcome should allow you to displays files from a documents directory on the server by inputting the `<load balancer's IP address>/documents` into the URL of a web browser.
 
-The completed configuration of our droplets will have a file tree that look like:
+The completed configuration of our droplets will have a file tree that look like this in the user `webgen`'s home directory:
 ```
 .
 ├── bin/
@@ -18,33 +18,61 @@ The completed configuration of our droplets will have a file tree that look like
 ## Table of Contents
 
 1. [Introduction](#introduction)
-2. [Step 1: Creating new Droplets](#step-1-creating-new-droplets)
-2. [Step 2: Setting Up New System User and Files](#step-2-setting-up-new-system-user-and-files)
-3. [Step 3: Set Up System User](#step-3-set-up-system-user)
-4. [Step 4: Unit File Configuration](#step-4-unit-file-configuration)
-5. [Step 5: Nginx Configuration](#step-5-nginx-configuration)
-6. [Step 6: Setting Up UFW](#step-6-setting-up-ufw)
-7. [Step 7: Verifying the Configuration](#step-7-verifying-the-configuration)
+2. [Step 1: Creating new Droplets and Load Balancer](#step-1-creating-new-droplets)
+3. [Setting Up New System User and Files](#setting-up-new-system-user-and-files)
+3. [Step 2: Set Up System User](#step-2-set-up-system-user)
+4. [Step 3: Unit File Configuration](#step-3-unit-file-configuration)
+5. [Step 4: Nginx Configuration](#step-4-nginx-configuration)
+6. [Step 5: Setting Up UFW](#step-5-setting-up-ufw)
+7. [Step 6: Verifying the Configuration](#step-6-verifying-the-configuration)
 8. [References](#references)
 
-## Step 1: Creating new Droplets
+## Step 1: Creating new Droplets and Load Balancer
 On DigitalOcean, begin by creating two new droplets.
 
 1. Press the green "Create" button at the top of the page and press "Create Droplet"
 2. For our case, select San Francisco Data center 3.
+
 ![datacenter](images/datacenter.png)
+
 3. Keep VPC network as `Default`
 4. Select our Arch Linux custom image.
 5. At the bottom of the page, select 2 droplets and add the tag `web`.
+
 ![tag](images/tag.png)
+
 6. Press `Create Droplet`
 
-## Step 2: Setting Up New System User and Files
-Before we begin, we need to create a system user called `webgen` with a home directory at `/var/lib/webgen` and a login shell for a non-user.
+Moving onto creating the load balancer,
+
+1. Select Networking from the left hand menu.
+
+![networking](images/networking.png)
+
+2. Select "Create a Regional or Global Load Balancer"
+3. Similar to our droplets, we will select `San Francisco Datacenter 3` again.
+4. Keep the VPC network as `default`
+5. keep network visibility as `public`
+
+![load balancer setting](images/loadbalancersetting.png)
+
+6. Make sure number of nodes is 2
+7. Add `web` tag to the connected droplets
+
+![web](images/web.png)
+
+8. Press `Create Load balancer`.
+
+**Note**: The load balancer will say it it's status is down until you configure apply the NGINX web server settings.
+
+## Setting Up New System User and Files
+**Note**: Steps 2 to 7 will require you to perform them on both DigitalOcean droplets.
+
+We need to create a system user called `webgen` with a home directory at `/var/lib/webgen` and a login shell for a non-user.
 
 The benefit of creating a system user rather than a regular user or root is so we can separate our files and other directories from our current user to prevent malicious attacks using something like the `chown` command. As for using system user instead of root, it prevents an attack from taking advantage of the elevated privileges within our system.[1][2]
 
-## Step 3: Set Up System User
+## Step 2: Set Up System User
 
 1. Enter the following command to create a system user with a custom home directory path with a non-login user shell:
 
@@ -69,9 +97,11 @@ Typically, the creation of a system user does not have a home directory, therefo
 
 4. Clone this repository to your home directory and move the generate_script using the following commands:
     
-    `git clone https://github.com/AlfredChan919/acit2420-assignment3p1.git`
+    `git clone https://git.sr.ht/~nathan_climbs/2420-as3-p2-start`
  
-    `sudo cp ~/acit2420-assignment3p1/generate_index /var/lib/webgen/bin/`
+    `sudo cp ~/2420-as3-p2-start/generate_index /var/lib/webgen/bin/`
+
+    **Note:** Since it is a new droplet, you may need to install git using the command: `sudo pacman -S git`. Also, this cloned start code is different from part 1!
 
 5. Give generate_script the permission to execute the script by entering the following command:
 
@@ -79,7 +109,11 @@ Typically, the creation of a system user does not have a home directory, therefo
 
 6. Create the index.html file in the `/var/lib/webgen/HTML` folder by entering the command:
 
-    `sudo nvim /var/lib/webgen/HTML/index.html`
+    `sudo touch /var/lib/webgen/HTML/index.html`
+
+7. Create two files called `file-one` and `file-two` in the `documents` directory. Enter the command:
+
+    `sudo touch /var/lib/webgen/documents/file-one /var/lib/webgen/documents/file-two`
 
 7. Change the ownership of the files and dictories to webgen using the command:
 
@@ -87,11 +121,11 @@ Typically, the creation of a system user does not have a home directory, therefo
 
 -R: Recursive. It will iterate through all the files in the directory.[3]
 
-## Step 4: Unit File Configuration
+## Step 3: Unit File Configuration
 
 We will need a .service file in order to execute our script as well as a .timer file to execute it at 5:00 AM every day.[4]
 
-1. Create the unit files in the /etc/systemd/system directory as a sudouser or as root. Enter the command:
+1. Create the unit files in the `/etc/systemd/system` directory as a sudouser or as root. Enter the command:
 
 `sudo nvim /etc/systemd/system/generate-index.service`
 
@@ -139,7 +173,7 @@ To test our service is working, type
 
 If successful, we can check by entering: `systemctl status generate-index.service` and checking the logs.[4]
 
-## Step 5: Nginx Configuration
+## Step 4: Nginx Configuration
 
 1. Install Nginx
 
@@ -160,7 +194,9 @@ The reason we put 2 webgen is because the first webgen states the user, and the 
 Next, inside the http block, add:
         
         http{
+            ...
             include /etc/nginx/sites-enabled/*;
+            ...
         }
 
 This will load in the configuration files. We will create the directories and its files in the next few steps.[5]
@@ -181,19 +217,32 @@ Enter the command: `sudo nvim /etc/nginx/sites-available/webgen`
 
 Then create a new server block inside the file by copying and pasting the following:
 
-        server {
-            listen 80;
-            listen [::]:80;
+```
+server {
+    listen 80;
+    listen [::]:80;
 
-            server_name local_host.webgen;
+    server_name local_host.webgen;
 
-            root /var/lib/webgen/HTML;
-            index index.html;
+    index index.html;
 
-                location / {
-                try_files $uri $uri/ =404;
-            }
-        }
+    location / {
+
+        root /var/lib/webgen/HTML;
+        index index.html;
+        try_files $uri $uri/ =404;
+    }
+
+    location /documents {
+
+        alias /var/lib/webgen/documents/;
+        autoindex on;
+        autoindex_exact_size off;
+        autoindex_localtime on;
+        try_files $uri $uri/ =404;
+    }
+}
+```
 
 `listen 80` and `listen [::]:80` listens for incoming connections on both IPv4 and IPv6 on port 80 for the domain name `local_host.webgen`.[5][6]
 
@@ -203,7 +252,9 @@ Then create a new server block inside the file by copying and pasting the follow
 
 `index` signifies the file to serve to the user when the directory is accessed. In our case, the default file `index.html` will be served.
 
-`location /` block chooses how to handle the request based on the URL. In our case, the / path means it handles requests sent to `http://local_host.webgen/`
+`location /` block chooses how the server handles the request based on the URL. In our case, the / path means it handles requests sent to `http://<our-ip-address>/`
+
+`location /documents` block chooses how the server handles the request based on the URL. In our case, the /documents path means it handles requests sent to `http://<our-ip-address>/documents` and returns the file tree from our `documents` directory.
 
 `try_files $uri $uri/ =404` will check if the requested file is found and hosts it, if not, it will return a 404 error.[6]
 
@@ -227,7 +278,7 @@ Check that Nginx service is working as intended by entering:
 
 **Note:** You may receive the error "Could not build optimal types_hash". Refer to section 6.4 of the https://wiki.archlinux.org/title/Nginx wiki page.[5]
 
-## Step 6: Setting Up UFW
+## Step 5: Setting Up UFW
 
 We will now set up the Uncomplicated Firewall (UFW) to help secure our server.
 
@@ -268,7 +319,7 @@ You will be presented with an output such as:
 
 If it says Status: active, then congratulations! Your firewall is now operational.
 
-## Step 7: Verifying the Configuration
+## Step 6: Verifying the Configuration
 
 To Verify the website is working, we need to get the IP address from our droplet on Digital Ocean.
 
