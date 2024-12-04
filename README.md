@@ -68,7 +68,7 @@ Moving onto creating the load balancer,
 ## Setting Up New System User and Files
 **Note**: Steps 2 to 7 will require you to perform them on both DigitalOcean droplets.
 
-We need to create a system user called `webgen` with a home directory at `/var/lib/webgen` and a login shell for a non-user.
+We need to create a system user called `webgen` with a home directory at `/var/lib/webgen` and a login shell for a non-login user.
 
 The benefit of creating a system user rather than a regular user or root is so we can separate our files and other directories from our current user to prevent malicious attacks using something like the `chown` command. As for using system user instead of root, it prevents an attack from taking advantage of the elevated privileges within our system.[1][2]
 
